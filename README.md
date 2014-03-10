@@ -10,4 +10,4 @@ $ pngblur <source> <destination>
 ````
 license
 -------
-pnglite by Daniel Karling ( https://github.com/dankar/pnglite ), license in pnglite.h
+_pnglite_ by Daniel Karling, license inside _pnglite.h_
