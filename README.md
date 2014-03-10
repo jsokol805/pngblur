@@ -8,7 +8,7 @@ Requires zlib to run.
 usage
 =======
 
-pngblur <source> <destination>
+pngblur [source] [destination]
 
 license
 =======
