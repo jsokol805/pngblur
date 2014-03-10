@@ -27,6 +27,7 @@
 #include <stdlib.h>
 #include <stdio.h>
 #include "pnglite.h"
+#define BYTES_PER_PIXEL 3
 
 typedef unsigned char byte;
 
@@ -58,10 +59,10 @@ void genAddr( int* addr, int x, int y, png_t* info )
 	if( y != info->height - 1 )
 	{
 		if( x != 0 )
-			addr[3] = px - 3 + width_px;
-		addr[4] = px + width_px;
+			addr[6] = px - 3 + width_px;
+		addr[7] = px + width_px;
 		if( x != info->width - 1 )
-			addr[5] = px + 3 + width_px;
+			addr[8] = px + 3 + width_px;
 	}
 }
 
@@ -75,9 +76,9 @@ void blur(byte* source, byte* result, png_t* info)
 		0.125,	0.125,	0.125
 	};
 
-	for( int y = 0; y < info->height; ++y )
+	for( int y = 1; y < info->height; ++y )
 	{
-		for( int x = 0; x < info->width; ++x )
+		for( int x = 1; x < info->width; ++x )
 		{
 			int px;
 			int addr[9];
@@ -86,7 +87,7 @@ void blur(byte* source, byte* result, png_t* info)
 
 			px = addr[4];
 
-			for( int i = 0; i < 3; ++i )
+			for( int i = 0; i < BYTES_PER_PIXEL; ++i )
 			{
 				for( int j = 0; j < 9; ++j )
 					result[px + i] += source[ addr[j] + i ] * filter[j];
