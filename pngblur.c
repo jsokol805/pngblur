@@ -31,69 +31,64 @@
 
 typedef unsigned char byte;
 
-// TODO variable kernel size
-void genAddr( int* addr, int x, int y, png_t* info )
+void blur(byte* source, byte* result, png_t* info, int ksize)
 {
-	int px, width_px;
-	px = 3 * x + 3 * info->width * y;
-	width_px = 3 * info->width;
+	unsigned int *temp;
+	int px;
 
-	for( int i = 0; i < 9; ++i )
-		addr[i] = px;
+	temp = malloc(sizeof(unsigned int) * BYTES_PER_PIXEL * info->width * info->height ); 
 
-	if( y != 0 )
+	for( int y = 0; y < info->height; ++y )
 	{
-		if( x != 0 )
-			addr[0] = px - 3 - width_px;
-		addr[1] = px - width_px;
-		if( x != info->width - 1 )
-			addr[2] = px + 3 - width_px;
-	}
-
-	if( x != 0 )
-		addr[3] = px - 3;
-	addr[4] = px;
-	if( x != info->width - 1 )
-		addr[5] = px + 3;
-
-	if( y != info->height - 1 )
-	{
-		if( x != 0 )
-			addr[6] = px - 3 + width_px;
-		addr[7] = px + width_px;
-		if( x != info->width - 1 )
-			addr[8] = px + 3 + width_px;
-	}
-}
-
-// TODO variable kernel size
-void blur(byte* source, byte* result, png_t* info)
-{
-	float filter[] =
-	{
-		0.125,	0.125,	0.125,
-		0.125,	0.125,	0.125,
-		0.125,	0.125,	0.125
-	};
-
-	for( int y = 1; y < info->height; ++y )
-	{
-		for( int x = 1; x < info->width; ++x )
+		for( int x = 0; x < info->width; ++x )
 		{
-			int px;
-			int addr[9];
-
-			genAddr(addr, x, y, info);
-
-			px = addr[4];
-
+			px = BYTES_PER_PIXEL * (x + info->width * y);
 			for( int i = 0; i < BYTES_PER_PIXEL; ++i )
 			{
-				for( int j = 0; j < 9; ++j )
-					result[px + i] += source[ addr[j] + i ] * filter[j];
+				temp[px + i] = source[px + i];
+				if( x != 0 )
+					temp[px + i] += temp[ px - BYTES_PER_PIXEL + i];
+				if( y != 0 )
+					temp[px + i] += temp[ px - BYTES_PER_PIXEL * info->width + i];
+				if( x != 0 && y != 0 )
+					temp[px + i] -= temp[ px - BYTES_PER_PIXEL * (info->width + 1) + i ];
 			}
 		}
 	}
+
+	double filter = (double) 1 / ((2*ksize + 1) * ( 2*ksize + 1));
+	int t;
+
+	for( int y = 0; y < info->height; ++y )
+	{
+		for( int x = 0; x < info->width; ++x )
+		{
+			int x_min, x_max, y_min, y_max;
+
+			if( (x_min = x - ksize) < 0 )
+				x_min = 0;
+			if( (x_max = x + ksize) > info->width-1 )
+				x_max = info->width-1;
+			if( (y_min = y - ksize) < 0 )
+				y_min = 0;
+			if( (y_max = y + ksize) > info->height-1 )
+				y_max = info->height-1;
+
+			px = BYTES_PER_PIXEL * (x + info->width * y);
+
+			for( int i = 0; i < BYTES_PER_PIXEL; ++i)
+			{
+				t =		temp[ BYTES_PER_PIXEL * (x_min + info->width * y_min)	+ i ];
+				t +=	temp[ BYTES_PER_PIXEL * (x_max + info->width * y_max)	+ i ];
+				t -=	temp[ BYTES_PER_PIXEL * (x_max + info->width * y_min)	+ i ];
+				t -=	temp[ BYTES_PER_PIXEL * (x_min + info->width * y_max)	+ i ];
+				t *=	filter;
+				result[ px + i ] = t;
+			}
+		}
+	}
+
+	free(temp);
 }
 
 int main (int argc, char** argv)
@@ -111,13 +106,13 @@ int main (int argc, char** argv)
 	png_init(0, 0);
 	png_open_file(&info, src_f);
 
-	file = malloc(4 * sizeof(byte) * info.width * info.height);
-	result = malloc(4 * sizeof(byte) * info.width * info.height);
+	file = malloc(BYTES_PER_PIXEL * sizeof(byte) * info.width * info.height);
+	result = malloc(BYTES_PER_PIXEL * sizeof(byte) * info.width * info.height);
 
 	png_get_data(&info, file);
 	png_close_file(&info);
 
-	blur(file, result, &info);
+	blur(file, result, &info, 3);
 
 	png_open_file_write(&dst, dst_f);
 	png_set_data(&dst, info.width, info.height, info.depth, info.color_type, result);
