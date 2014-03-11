@@ -1,5 +1,5 @@
-/*  pngblur.h - Interface for pnglite library
-	Copyright (c) 2014 Daniel Karling
+/*  pngblur.c - small tool for bluring png images
+	Copyright (c) 2014 Jakub Sokol
 
 	This software is provided 'as-is', without any express or implied
 	warranty. In no event will the authors be held liable for any damages
@@ -56,7 +56,7 @@ void blur(byte* source, byte* result, png_t* info, int ksize)
 		}
 	}
 
-	double filter = (double) 1 / ((2*ksize + 1) * ( 2*ksize + 1));
+	double filter = (double) 1 / (4*ksize*ksize);
 	int t;
 
 	for( int y = 0; y < info->height; ++y )
