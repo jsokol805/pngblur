@@ -96,9 +96,11 @@ int main (int argc, char** argv)
 	png_t info, dst;
 	byte *file, *result;
 	char *src_f, *dst_f;
+	int ksize;
 
-	src_f = argc >= 1 ? argv[1] : NULL;
-	dst_f = argc >= 2 ? argv[2] : NULL;
+	src_f = argc > 1 ? argv[1] : NULL;
+	dst_f = argc > 2 ? argv[2] : NULL;
+	ksize = argc > 3 ? atoi(argv[3]) : 3;
 
 	if( src_f == NULL || dst_f == NULL )
 		exit(1);
@@ -112,10 +114,11 @@ int main (int argc, char** argv)
 	png_get_data(&info, file);
 	png_close_file(&info);
 
-	blur(file, result, &info, 3);
+	blur(file, result, &info, ksize);
 
 	png_open_file_write(&dst, dst_f);
 	png_set_data(&dst, info.width, info.height, info.depth, info.color_type, result);
+	png_close_file(&dst);
 
 	free(file);
 	free(result);
