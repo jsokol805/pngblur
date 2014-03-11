@@ -115,6 +115,8 @@ int main (int argc, char** argv)
 	png_close_file(&info);
 
 	blur(file, result, &info, ksize);
+	blur(result, file, &info, ksize);
+	blur(file, result, &info, ksize);
 
 	png_open_file_write(&dst, dst_f);
 	png_set_data(&dst, info.width, info.height, info.depth, info.color_type, result);
