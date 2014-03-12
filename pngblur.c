@@ -1,4 +1,4 @@
-/*  pngblur.c - small tool for bluring png images
+/*  pngblur.c - small tool for bluring png/xwd images
 	Copyright (c) 2014 Jakub Sokol
 
 	This software is provided 'as-is', without any express or implied
@@ -24,12 +24,11 @@
 	beamerkun@gmail.com
  */
 
-#include <stdlib.h>
-#include <stdio.h>
+#include "pngblur.h"
 #include "pnglite.h"
+#include "xwdread.h"
+#include <string.h>
 #define BYTES_PER_PIXEL 3
-
-typedef unsigned char byte;
 
 void blur(byte* source, byte* result, png_t* info, int ksize)
 {
@@ -96,7 +95,7 @@ int main (int argc, char** argv)
 	png_t info, dst;
 	byte *file, *result;
 	char *src_f, *dst_f;
-	int ksize;
+	int ksize, width, height, color_type, depth;
 
 	src_f = argc > 1 ? argv[1] : NULL;
 	dst_f = argc > 2 ? argv[2] : NULL;
@@ -106,20 +105,37 @@ int main (int argc, char** argv)
 		exit(1);
 
 	png_init(0, 0);
-	png_open_file(&info, src_f);
 
-	file = malloc(BYTES_PER_PIXEL * sizeof(byte) * info.width * info.height);
-	result = malloc(BYTES_PER_PIXEL * sizeof(byte) * info.width * info.height);
+	if( strcmp("-", src_f) == 0 )
+	{
+		file = readXWD( src_f, &width, &height);
+		depth = 8;
+		color_type = 2;
+		info.width = width;
+		info.height = height;
+	}
+	else
+	{
+		png_open_file(&info, src_f);
 
-	png_get_data(&info, file);
-	png_close_file(&info);
+		file = malloc(BYTES_PER_PIXEL * sizeof(byte) * info.width * info.height);
 
+		png_get_data(&info, file);
+		png_close_file(&info);
+
+		width = info.width;
+		height = info.height;
+		color_type = info.color_type;
+		depth = info.depth;
+	}
+
+	result = malloc(BYTES_PER_PIXEL * sizeof(byte) * width * height);
 	blur(file, result, &info, ksize);
 	blur(result, file, &info, ksize);
 	blur(file, result, &info, ksize);
-
+	
 	png_open_file_write(&dst, dst_f);
-	png_set_data(&dst, info.width, info.height, info.depth, info.color_type, result);
+	png_set_data(&dst, width, height, depth, color_type, result);
 	png_close_file(&dst);
 
 	free(file);

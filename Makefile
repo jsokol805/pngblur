@@ -1,7 +1,7 @@
-CFLAGS = -std=c99 -O2 -Wall -pedantic -fstack-protector -Wl,-z,relro -Wl,-z,now -Wformat-security -Werror
+CFLAGS = -g -std=c99 -O2 -Wall -pedantic -fstack-protector -Wl,-z,relro -Wl,-z,now -Wformat-security -Werror
 LDFLAGS = -lz -Wl,-O1 -Wl,--build-id=sha1 -Wl,--no-undefined
 CC = gcc
-FILES = pngblur.o pnglite.o
+FILES = pngblur.o pnglite.o xwdread.o
 PROG = pngblur
 
 .c.o:
